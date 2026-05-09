@@ -19,6 +19,8 @@ export type CodexOAuthSettings = Omit<AuthLoaderOptions, "fetch"> & {
 	fetch?: FetchFunction
 	headers?: Record<string, string>
 	instructions?: string
+	reasoningEffort?: string
+	reasoningSummary?: string
 	store?: boolean
 	responsesState?: CodexResponsesState | false
 }
@@ -89,6 +91,10 @@ const pickFetch = (customFetch?: FetchFunction): FetchFunction => {
 	}
 
 	throw new Error("A fetch implementation is required for Codex OAuth.")
+}
+
+type FetchWithPreconnect = FetchFunction & {
+	preconnect?: (...args: unknown[]) => unknown
 }
 
 export const getDefaultCodexInstructions = (): string => {
@@ -194,7 +200,37 @@ const decodeBody = async (
 export type NormalizeCodexResponsesBodyOptions = {
 	instructions?: string
 	forceStream?: boolean
+	reasoningEffort?: string
+	reasoningSummary?: string
 	store?: boolean
+}
+
+const applyReasoningDefaults = (
+	normalized: Record<string, unknown>,
+	options: NormalizeCodexResponsesBodyOptions,
+): void => {
+	if (
+		normalized.reasoning_effort === undefined &&
+		typeof options.reasoningEffort === "string" &&
+		options.reasoningEffort.length > 0
+	) {
+		normalized.reasoning_effort = options.reasoningEffort
+	}
+
+	if (
+		normalized.reasoning === undefined &&
+		(typeof options.reasoningEffort === "string" ||
+			typeof options.reasoningSummary === "string")
+	) {
+		normalized.reasoning = {
+			...(typeof options.reasoningEffort === "string" && {
+				effort: options.reasoningEffort,
+			}),
+			...(typeof options.reasoningSummary === "string" && {
+				summary: options.reasoningSummary,
+			}),
+		}
+	}
 }
 
 export const normalizeCodexResponsesBody = (
@@ -216,6 +252,8 @@ export const normalizeCodexResponsesBody = (
 	if (options.forceStream) {
 		normalized.stream = true
 	}
+
+	applyReasoningDefaults(normalized, options)
 
 	delete normalized.max_output_tokens
 
@@ -256,6 +294,8 @@ const prepareResponsesRequestBody = async (
 
 		const normalized = normalizeCodexResponsesBody(parsed, {
 			instructions: settings.instructions,
+			reasoningEffort: settings.reasoningEffort,
+			reasoningSummary: settings.reasoningSummary,
 			store: settings.store,
 		})
 
@@ -356,8 +396,10 @@ export const createCodexOAuthFetch = (
 		)
 	}
 
-	if (typeof fetch.preconnect === "function") {
-		codexFetch.preconnect = fetch.preconnect.bind(fetch)
+	const fetchWithPreconnect = fetch as FetchWithPreconnect
+	if (typeof fetchWithPreconnect.preconnect === "function") {
+		;(codexFetch as FetchWithPreconnect).preconnect =
+			fetchWithPreconnect.preconnect.bind(fetch)
 	}
 
 	return codexFetch

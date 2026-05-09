@@ -40,6 +40,8 @@ export const handleResponsesRequest = async (
 			normalizeCodexResponsesBody(body, {
 				forceStream: true,
 				instructions: settings.instructions,
+				reasoningEffort: settings.reasoningEffort,
+				reasoningSummary: settings.reasoningSummary,
 				store: settings.store,
 			}),
 		),

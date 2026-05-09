@@ -49,6 +49,16 @@ What currently works:
 - Toolcalls
 - Reasoning Traces
 
+## Reasoning Defaults
+
+You can set default reasoning behavior for clients that do not send it:
+
+```bash
+npx openai-oauth --reasoning-effort high --reasoning-summary auto
+```
+
+Request-provided values still take precedence.
+
 ## Known Limitations
 
 What is intentionally not there yet:

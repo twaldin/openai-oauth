@@ -242,6 +242,64 @@ describe("openai oauth server", () => {
 		})
 	})
 
+	test("applies default reasoning settings to responses requests", async () => {
+		const authFilePath = await createAuthFile()
+		const fetch = vi.fn(async () => {
+			const stream = new ReadableStream<Uint8Array>({
+				start(controller) {
+					controller.enqueue(
+						new TextEncoder().encode(
+							[
+								"event: response.completed",
+								'data: {"response":{"id":"resp_1","status":"completed"}}',
+								"",
+							].join("\n"),
+						),
+					)
+					controller.close()
+				},
+			})
+
+			return new Response(stream, { status: 200 })
+		})
+
+		const handler = createOpenAIOAuthFetchHandler({
+			authFilePath,
+			ensureFresh: false,
+			fetch,
+			reasoningEffort: "high",
+			reasoningSummary: "auto",
+		})
+
+		const response = await handler(
+			new Request("http://localhost/v1/responses", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					model: "gpt-5.2",
+					stream: false,
+				}),
+			}),
+		)
+
+		expect(response.status).toBe(200)
+		const [, init] = fetch.mock.calls[0] ?? []
+		expect(JSON.parse(String(init?.body))).toMatchObject({
+			reasoning_effort: "high",
+			reasoning: {
+				effort: "high",
+				summary: "auto",
+			},
+		})
+
+		await fs.rm(path.dirname(authFilePath), {
+			recursive: true,
+			force: true,
+		})
+	})
+
 	test("rejects previous_response_id on the stateless responses endpoint", async () => {
 		const authFilePath = await createAuthFile()
 		const fetch = vi.fn()

@@ -10,6 +10,7 @@ import { installCliWarningLogger, toStartupMessage } from "./cli-logging.js"
 import { startOpenAIOAuthServer } from "./index.js"
 import { resolveOpenAIOAuthModels } from "./models.js"
 import { DEFAULT_PORT } from "./shared.js"
+import type { ChatRequest } from "./types.js"
 import { checkForOpenAIOAuthUpdates } from "./update-check.js"
 
 export type CliArgs = {
@@ -21,6 +22,8 @@ export type CliArgs = {
 	clientId?: string
 	tokenUrl?: string
 	authFilePath?: string
+	reasoningEffort?: ChatRequest["reasoning_effort"]
+	reasoningSummary?: string
 }
 
 const parseModels = (value: string | undefined): string[] | undefined => {
@@ -51,6 +54,8 @@ const helpLines = [
 	"  --oauth-client-id <id>     Override the OAuth client id used for refresh.",
 	"  --oauth-token-url <url>    Override the OAuth token URL used for refresh.",
 	"  --oauth-file <path>        Path to the local auth.json file.",
+	"  --reasoning-effort <level> Default reasoning effort when the request omits one.",
+	"  --reasoning-summary <mode> Default reasoning summary mode when supported.",
 	"",
 	"Flags",
 	"  --help                     Show help",
@@ -100,6 +105,15 @@ const createCliParser = (argv: string[]) =>
 			type: "string",
 			describe: "Path to the local auth.json file.",
 		})
+		.option("reasoning-effort", {
+			type: "string",
+			choices: ["none", "minimal", "low", "medium", "high"],
+			describe: "Default reasoning effort when the request omits one.",
+		})
+		.option("reasoning-summary", {
+			type: "string",
+			describe: "Default reasoning summary mode when supported.",
+		})
 
 const isHelpFlag = (argv: string[]): boolean =>
 	argv.includes("--help") || argv.includes("-h")
@@ -120,6 +134,10 @@ export const parseCliArgs = (argv: string[]): CliArgs => {
 		clientId: parsed.oauthClientId,
 		tokenUrl: parsed.oauthTokenUrl,
 		authFilePath: parsed.oauthFile,
+		reasoningEffort: parsed.reasoningEffort as
+			| ChatRequest["reasoning_effort"]
+			| undefined,
+		reasoningSummary: parsed.reasoningSummary,
 	}
 }
 
@@ -132,6 +150,8 @@ export const toServerOptions = (args: CliArgs) => ({
 	clientId: args.clientId,
 	tokenUrl: args.tokenUrl,
 	authFilePath: args.authFilePath,
+	reasoningEffort: args.reasoningEffort,
+	reasoningSummary: args.reasoningSummary,
 })
 
 const findExistingAuthFile = async (

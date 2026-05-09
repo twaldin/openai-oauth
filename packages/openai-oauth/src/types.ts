@@ -128,6 +128,8 @@ export type OpenAIOAuthServerOptions = Omit<
 	port?: number
 	models?: string[]
 	codexVersion?: string
+	reasoningEffort?: ChatRequest["reasoning_effort"]
+	reasoningSummary?: string
 	requestLogger?: (event: OpenAIOAuthServerLogEvent) => void
 }
 

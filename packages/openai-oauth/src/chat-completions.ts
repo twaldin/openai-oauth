@@ -60,6 +60,10 @@ const toChatCompletionResponse = (
 
 export const handleChatCompletionsRequest = async (
 	request: Request,
+	settings: {
+		reasoningEffort?: ChatRequest["reasoning_effort"]
+		reasoningSummary?: string
+	},
 	provider: OpenAIOAuthProvider,
 	logger: ((event: OpenAIOAuthServerLogEvent) => void) | undefined,
 ): Promise<Response> => {
@@ -89,6 +93,8 @@ export const handleChatCompletionsRequest = async (
 		return streamChatCompletions(body, provider, {
 			logger,
 			requestId,
+			reasoningEffort: settings.reasoningEffort,
+			reasoningSummary: settings.reasoningSummary,
 			startedAt,
 		})
 	}
@@ -111,7 +117,9 @@ export const handleChatCompletionsRequest = async (
 			providerOptions: {
 				openai: {
 					parallelToolCalls: body.parallel_tool_calls,
-					reasoningEffort: body.reasoning_effort,
+					reasoningEffort:
+						body.reasoning_effort ?? settings.reasoningEffort,
+					reasoningSummary: settings.reasoningSummary,
 				},
 			},
 		})

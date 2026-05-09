@@ -33,9 +33,17 @@ type OpenAIConfig = {
 }
 
 const emptyUsage = (): LanguageModelV3Usage => ({
-	inputTokens: undefined,
-	outputTokens: undefined,
-	totalTokens: undefined,
+	inputTokens: {
+		total: undefined,
+		noCache: undefined,
+		cacheRead: undefined,
+		cacheWrite: undefined,
+	},
+	outputTokens: {
+		total: undefined,
+		text: undefined,
+		reasoning: undefined,
+	},
 })
 
 const mergeProviderMetadata = (
@@ -66,7 +74,10 @@ class CodexResponsesLanguageModel extends OpenAIResponsesLanguageModel {
 		const activeTextById = new Map<string, LanguageModelV3Content>()
 		const activeReasoningById = new Map<string, LanguageModelV3Content>()
 
-		let finishReason: LanguageModelV3FinishReason = "unknown"
+		let finishReason: LanguageModelV3FinishReason = {
+			unified: "other",
+			raw: undefined,
+		}
 		let usage: LanguageModelV3Usage = emptyUsage()
 		let providerMetadata: SharedV3ProviderMetadata | undefined
 		let responseMetadata: LanguageModelV3ResponseMetadata | undefined
@@ -194,6 +205,10 @@ class CodexResponsesLanguageModel extends OpenAIResponsesLanguageModel {
 					case "file":
 					case "source": {
 						content.push(part)
+						break
+					}
+
+					case "tool-approval-request": {
 						break
 					}
 

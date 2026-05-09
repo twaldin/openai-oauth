@@ -76,7 +76,12 @@ const handleRoutes = async (
 	}
 
 	if (request.method === "POST" && url.pathname === "/v1/chat/completions") {
-		return handleChatCompletionsRequest(request, provider, requestLogger)
+		return handleChatCompletionsRequest(
+			request,
+			settings,
+			provider,
+			requestLogger,
+		)
 	}
 
 	return toErrorResponse("Route not found.", 404, "not_found_error")
