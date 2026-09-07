@@ -1,10 +1,24 @@
 # openai-oauth
 
-[NPM](https://www.npmjs.com/package/openai-oauth) | [Legal](#legal)
+[NPM](https://www.npmjs.com/package/openai-oauth) | [Upstream](https://github.com/EvanZhouDev/openai-oauth) | [Legal](#legal)
 
 Free OpenAI API access with your ChatGPT account.
 
-Just run `npx openai-oauth`.
+The published CLI runs with `npx openai-oauth`. To run this fork, use the checkout instructions below.
+
+## This Fork
+
+This is [twaldin/openai-oauth](https://github.com/twaldin/openai-oauth), a fork of EvanZhouDev/openai-oauth. Its local feature commit, [`b471a45`](https://github.com/twaldin/openai-oauth/commit/b471a45632fd93ca8cb650379cfbe2f728a5e101), adds configurable reasoning defaults. The package names and upstream notices are retained; `npx openai-oauth` resolves the npm package, not this checkout.
+
+From this repository's root, install the locked dependencies with Bun and run the CLI from source:
+
+```bash
+bun install --frozen-lockfile
+bun run --cwd packages/openai-oauth dev --help
+bun run --cwd packages/openai-oauth dev --reasoning-effort high --reasoning-summary auto
+```
+
+The last command requires an existing local auth file and starts the proxy. The package READMEs describe the [CLI](packages/openai-oauth/README.md) and [provider](packages/openai-oauth-provider/README.md) settings in this checkout.
 
 ## How to Use
 
@@ -51,15 +65,17 @@ The CLI and the provider share the same core OAuth transport settings.
 | Host binding        | `--host`            | N/A            | `127.0.0.1`                                                                                                                                             | Host interface the local proxy binds to.                                                                                           |
 | Port                | `--port`            | N/A            | `10531`                                                                                                                                                 | Port the local proxy binds to.                                                                                                     |
 | Model allowlist     | `--models`          | N/A            | Account-specific Codex models discovered from ChatGPT                                                                                                   | Comma-separated list of model ids exposed by `/v1/models`. When omitted, the CLI discovers the models your account has access to. |
-| Codex API version   | `--codex-version`   | `codexVersion` | Local `codex --version`, then `@openai/codex` latest from npm, then `0.111.0`                                                                          | Override the Codex API client version used for model discovery.                                                                    |
+| Codex API version | `--codex-version` | `codexVersion` | CLI: local `codex --version`, then `@openai/codex` latest from npm, then `0.111.0` | Used for CLI model discovery. Accepted by the provider's shared settings type but unused by the provider itself. |
 | Upstream base URL   | `--base-url`        | `baseURL`      | `https://chatgpt.com/backend-api/codex`                                                                                                                 | Override the upstream Codex base URL.                                                                                              |
 | OAuth client id     | `--oauth-client-id` | `clientId`     | `app_EMoamEEZ73f0CkXaXp7hrann`                                                                                                                          | Override the OAuth client id used for refresh.                                                                                     |
 | OAuth token URL     | `--oauth-token-url` | `tokenUrl`     | `https://auth.openai.com/oauth/token`                                                                                                                   | Override the OAuth token URL used for refresh.                                                                                     |
 | Auth file path      | `--oauth-file`      | `authFilePath` | `--oauth-file` path if provided, otherwise `$CHATGPT_LOCAL_HOME/auth.json`, `$CODEX_HOME/auth.json`, `~/.chatgpt-local/auth.json`, `~/.codex/auth.json` | Override where the local OAuth auth file is discovered.                                                                            |
-| Reasoning effort    | `--reasoning-effort` | `reasoningEffort` | Request-provided value, otherwise unset                                                                                                              | Default reasoning effort for chat/responses requests when the client omits one (`none`, `minimal`, `low`, `medium`, `high`).      |
-| Reasoning summary   | `--reasoning-summary` | `reasoningSummary` | Request-provided value, otherwise unset                                                                                                             | Default reasoning summary mode for responses-capable models when supported.                                                        |
+| Reasoning effort | `--reasoning-effort` | `reasoningEffort` | Unset | CLI choices: `none`, `minimal`, `low`, `medium`, `high`; the provider setting accepts a string. See the precedence notes below. |
+| Reasoning summary | `--reasoning-summary` | `reasoningSummary` | Unset | Default summary mode, such as `auto`, when supported by the model. See the precedence notes below. |
 | Ensure fresh tokens | N/A                 | `ensureFresh`  | `true`                                                                                                                                                  | Control whether access tokens are refreshed automatically.                                                                         |
 | Provider name       | N/A                 | `name`         | `openai`                                                                                                                                                | Override the provider name exposed to Vercel AI SDK internals.                                                                     |
+
+Reasoning precedence differs by request path: Chat Completions uses the request's `reasoning_effort` before the configured effort, while Responses normalization preserves an existing `reasoning` object without filling missing fields. See [CLI reasoning defaults](packages/openai-oauth/README.md#reasoning-defaults) and [provider reasoning defaults](packages/openai-oauth-provider/README.md#reasoning-defaults) for details.
 
 ## Features
 
