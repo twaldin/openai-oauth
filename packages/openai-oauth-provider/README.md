@@ -1,10 +1,12 @@
 # openai-oauth-provider
 
-[GitHub](https://github.com/EvanZhouDev/openai-oauth) | [Legal](#legal)
+[Fork](https://github.com/twaldin/openai-oauth) | [Upstream](https://github.com/EvanZhouDev/openai-oauth) | [Legal](#legal)
 
 Vercel AI SDK provider that uses your ChatGPT account.
 
 ## Usage
+
+These settings describe this fork's source. Importing `openai-oauth-provider` from an npm installation uses that installed release, not this checkout; see the [fork context](../../README.md#this-fork).
 
 ```ts
 import { generateText } from "ai"
@@ -29,12 +31,27 @@ console.log(result.text)
 | Config | Provider | Default | Description |
 | --- | --- | --- | --- |
 | Upstream base URL | `baseURL` | `https://chatgpt.com/backend-api/codex` | Override the upstream Codex base URL. |
-| Codex API version | `codexVersion` | Local `codex --version`, then `@openai/codex` latest from npm, then `0.111.0` | Override the Codex API client version used for model discovery. This mainly matters for CLI-style model catalog lookups, but the provider accepts it for config parity. |
+| Codex API version | `codexVersion` | Unused by the provider | Accepted through the shared transport settings type. Version discovery and its fallback chain belong to the CLI model catalog, not this provider. |
 | OAuth client id | `clientId` | `app_EMoamEEZ73f0CkXaXp7hrann` | Override the OAuth client id used for refresh. |
 | OAuth token URL | `tokenUrl` | `https://auth.openai.com/oauth/token` | Override the OAuth token URL used for refresh. |
 | Auth file path | `authFilePath` | `authFilePath` if provided, otherwise `$CHATGPT_LOCAL_HOME/auth.json`, `$CODEX_HOME/auth.json`, `~/.chatgpt-local/auth.json`, `~/.codex/auth.json` | Override where the local OAuth auth file is discovered. |
 | Ensure fresh tokens | `ensureFresh` | `true` | Control whether access tokens are refreshed automatically. |
 | Provider name | `name` | `openai` | Override the provider name exposed to Vercel AI SDK internals. |
+| Reasoning effort | `reasoningEffort` | Unset | String default for Responses request normalization; see [Reasoning Defaults](#reasoning-defaults). |
+| Reasoning summary | `reasoningSummary` | Unset | String default for summary mode, such as `auto`, when supported by the model; see [Reasoning Defaults](#reasoning-defaults). |
+
+## Reasoning Defaults
+
+Configure transport defaults when creating the provider:
+
+```ts
+const openai = createOpenAIOAuth({
+	reasoningEffort: "high",
+	reasoningSummary: "auto",
+})
+```
+
+Defaults are applied to the Responses body produced by the AI SDK. The transport adds a `reasoning` object only when that object is absent. If the SDK supplies one, it is preserved as a whole: a body containing `{ "reasoning": { "effort": "low" } }` does not gain the default summary. Separately, a missing top-level `reasoning_effort` receives the configured effort. Effort and summary support depend on the selected model.
 
 ## Features
 

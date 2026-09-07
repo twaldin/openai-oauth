@@ -1,10 +1,12 @@
 # openai-oauth
 
-[GitHub](https://github.com/EvanZhouDev/openai-oauth) | [Legal](#legal)
+[Fork](https://github.com/twaldin/openai-oauth) | [Upstream](https://github.com/EvanZhouDev/openai-oauth) | [Legal](#legal)
 
 OpenAI-compatible local endpoint backed by your ChatGPT account.
 
 ## Usage
+
+The command below runs the published npm package, not this fork's checkout. To run the fork from source, follow the [repository instructions](../../README.md#this-fork).
 
 ```bash
 npx openai-oauth
@@ -36,6 +38,8 @@ npx @openai/codex login
 | OAuth client id   | `--oauth-client-id` | `app_EMoamEEZ73f0CkXaXp7hrann`                                                                                                                          | Override the OAuth client id used for refresh.                                                                                     |
 | OAuth token URL   | `--oauth-token-url` | `https://auth.openai.com/oauth/token`                                                                                                                   | Override the OAuth token URL used for refresh.                                                                                     |
 | Auth file path    | `--oauth-file`      | `--oauth-file` path if provided, otherwise `$CHATGPT_LOCAL_HOME/auth.json`, `$CODEX_HOME/auth.json`, `~/.chatgpt-local/auth.json`, `~/.codex/auth.json` | Override where the local OAuth auth file is discovered.                                                                            |
+| Reasoning effort | `--reasoning-effort` | Unset | Choices: `none`, `minimal`, `low`, `medium`, `high`. See [Reasoning Defaults](#reasoning-defaults) for request precedence. |
+| Reasoning summary | `--reasoning-summary` | Unset | Default summary mode, such as `auto`, when supported by the model. See [Reasoning Defaults](#reasoning-defaults). |
 
 ## Features
 
@@ -51,13 +55,16 @@ What currently works:
 
 ## Reasoning Defaults
 
-You can set default reasoning behavior for clients that do not send it:
+From this repository's root, set defaults for the fork's CLI:
 
 ```bash
-npx openai-oauth --reasoning-effort high --reasoning-summary auto
+bun run --cwd packages/openai-oauth dev --reasoning-effort high --reasoning-summary auto
 ```
 
-Request-provided values still take precedence.
+- `/v1/chat/completions`: request `reasoning_effort` takes precedence over `--reasoning-effort`, for both streaming and non-streaming calls. Summary mode comes from `--reasoning-summary`; this route does not read a request-level summary setting.
+- `/v1/responses`: normalization adds a default `reasoning` object only when the request omits that object. An existing object, including `{ "effort": "low" }` or `{}`, is preserved as a whole; missing fields are not filled. Separately, a missing top-level `reasoning_effort` receives the configured effort.
+
+These settings control the outgoing request; model support still determines which effort and summary values are usable.
 
 ## Known Limitations
 
